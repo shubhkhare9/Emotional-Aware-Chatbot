@@ -1,0 +1,5 @@
+reason,count,ratio
+keep_non_neutral,107803,0.51037
+keep_neutral_only,55298,0.261797
+drop_unmapped,36458,0.172603
+drop_ambiguous,11666,0.05523

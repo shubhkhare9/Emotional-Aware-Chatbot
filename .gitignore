@@ -1,0 +1,15 @@
+.DS_Store
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+
+.venv/
+.env
+
+results/trainer_runs/checkpoint-*/
+models/best_model/model.safetensors
+*.pt
+
+reports/shap/
+
+tmp/

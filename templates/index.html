@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emotion-Aware Chatbot</title>
+  <style>
+    :root {
+      --bg: #f3efe7;
+      --panel: rgba(255, 252, 246, 0.88);
+      --panel-strong: #fffaf0;
+      --line: rgba(91, 71, 48, 0.14);
+      --text: #2b2118;
+      --muted: #6f6155;
+      --accent: #c86b3c;
+      --accent-dark: #a7542a;
+      --anger: #d94841;
+      --fear: #7656d6;
+      --joy: #d9a400;
+      --love: #d86188;
+      --neutral: #73808a;
+      --sadness: #3974d6;
+      --shadow: 0 24px 70px rgba(82, 51, 28, 0.12);
+      --radius: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(237, 182, 118, 0.28), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(129, 171, 219, 0.22), transparent 28%),
+        linear-gradient(135deg, #efe4d4 0%, #f6f1ea 45%, #e8ecef 100%);
+    }
+
+    .page-shell {
+      width: min(1440px, calc(100vw - 32px));
+      margin: 20px auto;
+      display: grid;
+      grid-template-columns: 1.25fr 0.9fr;
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero {
+      padding: 28px 28px 18px;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 3vw, 3.3rem);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      font-weight: 700;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.55;
+    }
+
+    .hero-badge {
+      min-width: 240px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(246,234,221,0.92));
+      border: 1px solid rgba(91, 71, 48, 0.12);
+    }
+
+    .badge-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .badge-value {
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+
+    .left-column,
+    .right-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .chat-shell {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      min-height: 760px;
+    }
+
+    .chat-window {
+      flex: 1;
+      min-height: 480px;
+      max-height: 620px;
+      overflow-y: auto;
+      padding: 14px;
+      border-radius: 20px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.75), rgba(248, 240, 231, 0.94)),
+        repeating-linear-gradient(
+          0deg,
+          rgba(130, 96, 64, 0.035),
+          rgba(130, 96, 64, 0.035) 1px,
+          transparent 1px,
+          transparent 30px
+        );
+      border: 1px solid rgba(91, 71, 48, 0.08);
+    }
+
+    .empty-state {
+      min-height: 420px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+      padding: 30px;
+    }
+
+    .message-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .bubble {
+      max-width: 84%;
+      padding: 14px 16px;
+      border-radius: 18px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      border: 1px solid rgba(91, 71, 48, 0.08);
+      box-shadow: 0 10px 28px rgba(70, 45, 20, 0.08);
+    }
+
+    .bubble.user {
+      margin-left: auto;
+      background: linear-gradient(135deg, #cf6e3d, #b65b31);
+      color: #fff8f1;
+      border-bottom-right-radius: 6px;
+    }
+
+    .bubble.bot {
+      margin-right: auto;
+      background: rgba(255, 251, 245, 0.98);
+      color: var(--text);
+      border-bottom-left-radius: 6px;
+    }
+
+    .analysis-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+      margin-bottom: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      border: 1px solid rgba(91, 71, 48, 0.1);
+      background: rgba(255,255,255,0.75);
+      color: var(--text);
+    }
+
+    .pill .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .composer {
+      margin-top: 18px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .composer textarea {
+      width: 100%;
+      resize: vertical;
+      min-height: 110px;
+      border: 1px solid rgba(91, 71, 48, 0.12);
+      border-radius: 20px;
+      padding: 16px 18px;
+      background: rgba(255,255,255,0.76);
+      color: var(--text);
+      font: inherit;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 14px;
+      align-items: end;
+    }
+
+    .settings {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .field input[type="range"] {
+      width: 180px;
+      accent-color: var(--accent);
+    }
+
+    .checkbox-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 10px;
+    }
+
+    .select-input {
+      min-width: 220px;
+      border: 1px solid rgba(91, 71, 48, 0.12);
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.82);
+      color: var(--text);
+      font: inherit;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font: inherit;
+      font-weight: 600;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: #fff8f1;
+      box-shadow: 0 18px 30px rgba(200, 107, 60, 0.22);
+    }
+
+    .secondary-btn {
+      background: rgba(255,255,255,0.86);
+      color: var(--text);
+      border: 1px solid rgba(91, 71, 48, 0.12);
+    }
+
+    .analysis-panel {
+      padding: 22px;
+    }
+
+    .analysis-panel h2 {
+      margin: 0 0 14px;
+      font-size: 1.2rem;
+    }
+
+    .subtle {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .chart-card {
+      border-radius: 18px;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(91, 71, 48, 0.08);
+      min-height: 200px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .chart-card img {
+      width: 100%;
+      display: block;
+    }
+
+    .shap-box {
+      min-height: 210px;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.76);
+      border: 1px solid rgba(91, 71, 48, 0.08);
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .shap-placeholder-card {
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(249, 245, 240, 0.9);
+      color: var(--text);
+    }
+
+    .shap-subtle {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .examples {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .example-chip {
+      text-align: left;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.84);
+      border: 1px solid rgba(91, 71, 48, 0.1);
+      color: var(--text);
+    }
+
+    .status-line {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      min-height: 1.4em;
+    }
+
+    .loading {
+      opacity: 0.72;
+      pointer-events: none;
+    }
+
+    @media (max-width: 1100px) {
+      .page-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page-shell {
+        width: min(100vw - 18px, 100%);
+        margin: 10px auto;
+        gap: 12px;
+      }
+
+      .hero,
+      .chat-shell,
+      .analysis-panel {
+        padding: 16px;
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .examples {
+        grid-template-columns: 1fr;
+      }
+
+      .bubble {
+        max-width: 92%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <div class="left-column">
+      <section class="panel hero">
+        <div>
+          <h1>Emotion-Aware Chatbot</h1>
+          <p>
+            This interface uses your trained RoBERTa model for emotion detection,
+            can show SHAP token highlights, and tracks emotional flow across the conversation.
+            It mirrors the analysis experience from the notebook in a dedicated web app.
+          </p>
+        </div>
+        <div class="hero-badge">
+          <div class="badge-label">Generator Status</div>
+          <div class="badge-value"><strong>{{ generator_backend }}</strong></div>
+          <div class="subtle" id="generatorStatus">{{ generator_status }}</div>
+        </div>
+      </section>
+
+      <section class="panel chat-shell">
+        <div id="chatWindow" class="chat-window">
+          <div class="empty-state" id="emptyState">
+            <div>
+              <h2>Start the conversation</h2>
+              <p>Send a message to see emotion detection, confidence charts, SHAP highlights, and response generation.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="composer" id="composer">
+          <textarea id="messageInput" placeholder="Type how you feel, ask a question, or try one of the examples below."></textarea>
+
+          <div class="toolbar">
+            <div class="settings">
+              <label class="field">
+                <span>Response model</span>
+                <select id="modelChoice" class="select-input">
+                  {% for key, option in model_options.items() %}
+                  <option value="{{ key }}" {% if key == default_model_choice %}selected{% endif %}>
+                    {{ option.label }} - {{ option.description }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Max new tokens: <strong id="tokenValue">{{ config.max_new_tokens }}</strong></span>
+                <input id="maxTokens" type="range" min="64" max="512" step="32" value="{{ config.max_new_tokens }}">
+              </label>
+
+              <label class="field">
+                <span>Temperature: <strong id="tempValue">{{ '%.2f'|format(config.temperature) }}</strong></span>
+                <input id="temperature" type="range" min="0.1" max="1.2" step="0.05" value="{{ config.temperature }}">
+              </label>
+
+              <label class="checkbox-line">
+                <input id="runShap" type="checkbox">
+                <span>Show SHAP highlights</span>
+              </label>
+            </div>
+
+            <div class="actions">
+              <button id="resetBtn" class="secondary-btn" type="button">Reset</button>
+              <button id="sendBtn" class="primary-btn" type="button">Send</button>
+            </div>
+          </div>
+
+          <div class="status-line" id="statusLine"></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="right-column">
+      <section class="panel analysis-panel">
+        <h2>Emotion Analysis</h2>
+        <p class="subtle">Confidence scores from the classifier update on every message.</p>
+        <div class="chart-card">
+          <img id="confidenceChart" alt="Confidence chart" style="display:none;">
+          <div id="confidencePlaceholder" class="subtle">No prediction yet.</div>
+        </div>
+      </section>
+
+      <section class="panel analysis-panel">
+        <h2>SHAP Token Highlights</h2>
+        <p class="subtle">Green pushes toward the predicted emotion, red pushes away. This can be slower when enabled.</p>
+        <div id="shapBox" class="shap-box">
+          <div class="subtle">Send a message to see token-level explanation output.</div>
+        </div>
+      </section>
+
+      <section class="panel analysis-panel">
+        <h2>Emotion Trend</h2>
+        <p class="subtle">The chart tracks the predicted emotion and confidence across the conversation.</p>
+        <div class="chart-card">
+          <img id="trendChart" alt="Emotion trend chart" src="" style="display:none;">
+          <div id="trendPlaceholder" class="subtle">No conversation yet.</div>
+        </div>
+      </section>
+
+      <section class="panel analysis-panel">
+        <h2>Try Examples</h2>
+        <div class="examples">
+          <button class="example-chip" type="button">I just got promoted today and I still cannot believe it.</button>
+          <button class="example-chip" type="button">I am so tired of being ignored by everyone around me.</button>
+          <button class="example-chip" type="button">My grandmother passed away last week and I miss her so much.</button>
+          <button class="example-chip" type="button">I am terrified about my exam results tomorrow.</button>
+          <button class="example-chip" type="button">I love spending evenings with my family.</button>
+          <button class="example-chip" type="button">Can you explain how machine learning works?</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const chatWindow = document.getElementById("chatWindow");
+    const emptyState = document.getElementById("emptyState");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const runShap = document.getElementById("runShap");
+    const modelChoice = document.getElementById("modelChoice");
+    const maxTokens = document.getElementById("maxTokens");
+    const temperature = document.getElementById("temperature");
+    const tokenValue = document.getElementById("tokenValue");
+    const tempValue = document.getElementById("tempValue");
+    const confidenceChart = document.getElementById("confidenceChart");
+    const confidencePlaceholder = document.getElementById("confidencePlaceholder");
+    const trendChart = document.getElementById("trendChart");
+    const trendPlaceholder = document.getElementById("trendPlaceholder");
+    const shapBox = document.getElementById("shapBox");
+    const statusLine = document.getElementById("statusLine");
+    const composer = document.getElementById("composer");
+    const generatorStatus = document.getElementById("generatorStatus");
+
+    const emotionColors = {
+      Anger: "var(--anger)",
+      Fear: "var(--fear)",
+      Joy: "var(--joy)",
+      Love: "var(--love)",
+      Neutral: "var(--neutral)",
+      Sadness: "var(--sadness)"
+    };
+
+    function setBusy(isBusy, text = "") {
+      composer.classList.toggle("loading", isBusy);
+      sendBtn.disabled = isBusy;
+      resetBtn.disabled = isBusy;
+      statusLine.textContent = text;
+    }
+
+    function createBubble(text, who) {
+      const bubble = document.createElement("div");
+      bubble.className = `bubble ${who}`;
+      bubble.textContent = text;
+      return bubble;
+    }
+
+    function createAnalysisRow(emotion, confidence, generatorLabel) {
+      const row = document.createElement("div");
+      row.className = "analysis-row";
+
+      const emotionPill = document.createElement("div");
+      emotionPill.className = "pill";
+      emotionPill.innerHTML = `<span class="dot" style="background:${emotionColors[emotion] || 'var(--accent)'}"></span><strong>${emotion}</strong>`;
+
+      const confidencePill = document.createElement("div");
+      confidencePill.className = "pill";
+      confidencePill.textContent = `Confidence ${Math.round(confidence * 1000) / 10}%`;
+
+      const generatorPill = document.createElement("div");
+      generatorPill.className = "pill";
+      generatorPill.textContent = generatorLabel;
+
+      row.appendChild(emotionPill);
+      row.appendChild(confidencePill);
+      row.appendChild(generatorPill);
+      return row;
+    }
+
+    function appendConversation(data) {
+      emptyState.style.display = "none";
+
+      const group = document.createElement("div");
+      group.className = "message-group";
+      group.appendChild(createBubble(data.message, "user"));
+      group.appendChild(createAnalysisRow(data.emotion, data.confidence, data.generator_label));
+      group.appendChild(createBubble(data.reply, "bot"));
+      chatWindow.appendChild(group);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function updateCharts(data) {
+      confidenceChart.src = data.confidence_chart;
+      confidenceChart.style.display = "block";
+      confidencePlaceholder.style.display = "none";
+
+      trendChart.src = data.trend_chart;
+      trendChart.style.display = "block";
+      trendPlaceholder.style.display = "none";
+    }
+
+    function updateShap(data) {
+      shapBox.innerHTML = data.shap_html;
+    }
+
+    async function pollShap(jobId) {
+      if (!jobId) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/shap/${jobId}`);
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Unable to fetch SHAP result.");
+        }
+
+        if (data.ready) {
+          shapBox.innerHTML = data.html;
+          statusLine.textContent = `${statusLine.textContent} SHAP ready.`;
+          return;
+        }
+
+        window.setTimeout(() => pollShap(jobId), 1500);
+      } catch (error) {
+        shapBox.innerHTML = `<div class='subtle'>${error.message}</div>`;
+      }
+    }
+
+    async function sendMessage() {
+      const message = messageInput.value.trim();
+      if (!message) {
+        statusLine.textContent = "Please type a message first.";
+        return;
+      }
+
+      setBusy(true, runShap.checked ? "Analyzing emotion, generating response, and computing SHAP..." : "Analyzing emotion and generating response...");
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message,
+            run_shap: runShap.checked,
+            model_choice: modelChoice.value,
+            max_new_tokens: Number(maxTokens.value),
+            temperature: Number(temperature.value)
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Chat request failed.");
+        }
+
+        appendConversation(data);
+        updateCharts(data);
+        updateShap(data);
+        messageInput.value = "";
+        generatorStatus.textContent = `${data.generator_label}: ${data.generator_status}`;
+        statusLine.textContent = `${data.emotion} detected at ${(data.confidence * 100).toFixed(1)}% confidence using ${data.generator_label}.`;
+        if (data.shap_job_id) {
+          pollShap(data.shap_job_id);
+        }
+      } catch (error) {
+        statusLine.textContent = error.message;
+      } finally {
+        setBusy(false, statusLine.textContent);
+      }
+    }
+
+    async function resetConversation() {
+      setBusy(true, "Resetting conversation...");
+      try {
+        const response = await fetch("/api/reset", { method: "POST" });
+        const data = await response.json();
+        chatWindow.innerHTML = "";
+        chatWindow.appendChild(emptyState);
+        emptyState.style.display = "grid";
+        shapBox.innerHTML = "<div class='subtle'>Send a message to see token-level explanation output.</div>";
+        confidenceChart.style.display = "none";
+        trendChart.src = data.trend_chart;
+        trendChart.style.display = "block";
+        trendPlaceholder.style.display = "none";
+        confidencePlaceholder.style.display = "block";
+        statusLine.textContent = data.message;
+      } catch (error) {
+        statusLine.textContent = error.message;
+      } finally {
+        setBusy(false, statusLine.textContent);
+      }
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    resetBtn.addEventListener("click", resetConversation);
+    messageInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+      }
+    });
+
+    maxTokens.addEventListener("input", () => {
+      tokenValue.textContent = maxTokens.value;
+    });
+
+    temperature.addEventListener("input", () => {
+      tempValue.textContent = Number(temperature.value).toFixed(2);
+    });
+
+    document.querySelectorAll(".example-chip").forEach((button) => {
+      button.addEventListener("click", () => {
+        messageInput.value = button.textContent;
+        messageInput.focus();
+      });
+    });
+  </script>
+</body>
+</html>

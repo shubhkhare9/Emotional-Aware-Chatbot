@@ -1,0 +1,12 @@
+final_emotion,is_augmented,count
+Anger,0,9546
+Anger,1,10262
+Fear,0,1092
+Fear,1,18716
+Joy,0,11689
+Joy,1,8119
+Love,0,8822
+Love,1,10986
+Neutral,0,19808
+Sadness,0,4676
+Sadness,1,15132

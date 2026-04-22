@@ -1,0 +1,11 @@
+{
+  "accuracy": 0.8394615061001263,
+  "precision_macro": 0.8350853985558713,
+  "recall_macro": 0.8394739503396748,
+  "f1_macro": 0.8354397894540567,
+  "precision_weighted": 0.8350731269641273,
+  "recall_weighted": 0.8394615061001263,
+  "f1_weighted": 0.8354272776176613,
+  "best_checkpoint": "/content/drive/MyDrive/Emotional Aware Chatbot/experiments/goemotions_roberta_full_pipeline/results/trainer_runs/checkpoint-26748",
+  "epochs_trained": 10.0
+}
