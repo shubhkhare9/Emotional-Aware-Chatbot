@@ -1,6 +1,6 @@
 # Emotion-Aware Chatbot
 
-This project packages your notebook pipeline into a runnable Python app. It uses the trained local RoBERTa classifier in `models/best_model` and exposes:
+This project packages the full emotion-classification pipeline into a runnable Python app. It includes the training and evaluation notebooks, the trained local RoBERTa classifier in `models/best_model`, generated report artifacts, and app entrypoints for CLI and web usage:
 
 - `main.py predict` for one-shot emotion classification
 - `main.py chat` for terminal chat
@@ -8,11 +8,33 @@ This project packages your notebook pipeline into a runnable Python app. It uses
 
 ## Project layout
 
+- `notebooks/`: end-to-end experimentation, training, explainability, and app notebooks
 - `models/best_model`: trained RoBERTa emotion classifier
+- `reports/`: exported metrics, charts, response-generation outputs, and report assets
 - `reports/response_generation/pipeline_config.json`: generation settings and emotion prompts
 - `emotion_chatbot/`: reusable runtime code
 - `main.py`: CLI entrypoint
 - `app.py`: Gradio app entrypoint
+- `web_app.py`: custom HTML chatbot server
+
+## Notebook workflow
+
+The notebooks follow the project pipeline from model comparison to deployment:
+
+- `02_model_comparison_tfidf_svm_bilstm.ipynb`: baseline model comparison
+- `03_full_roberta_pipeline.ipynb`: RoBERTa training and evaluation pipeline
+- `04_shap_explainability_fixed.ipynb`: SHAP explainability workflow
+- `05_mistral_response_generation_fix.ipynb`: empathetic response-generation experiments
+- `06_gradio_chatbot (1).ipynb`: Gradio chatbot prototyping
+
+## Report artifacts
+
+Generated outputs used for evaluation and reporting are stored under `reports/`, including:
+
+- `metrics.json`, `classification_report.csv`, and `confusion_matrix.csv`
+- `confusion_matrix.png` and `training_curves.png`
+- `project_report_assets/` visual assets such as the architecture, pipeline, and model comparison charts
+- `response_generation/` files for prompt configuration and batch-generated responses
 
 ## Setup
 
